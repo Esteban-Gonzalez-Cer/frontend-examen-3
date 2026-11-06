@@ -35,7 +35,7 @@ describe('login validation', () => {
 })
 
 describe('session store', () => {
-  beforeEach(() => sessionStore.setState({ session: null, endReason: null }))
+  beforeEach(() => sessionStore.setState({ session: null, endReason: null, restored: true }))
 
   it('a new login replaces the previous token', () => {
     sessionStore.getState().start(session('old', 30))
@@ -56,10 +56,12 @@ describe('session store', () => {
     expect(sessionStore.getState().endReason).toBe('expired')
   })
 
-  it('persists only the session in sessionStorage', () => {
-    sessionStore.getState().start(session('persisted', 30))
-    const raw = sessionStorage.getItem('trayecta.session') ?? ''
-    expect(raw).toContain('persisted')
-    expect(raw).not.toContain('endReason')
+  it('keeps the token in memory only, never in web storage', () => {
+    sessionStore.getState().start(session('secret-token', 30))
+    expect(getActiveToken()).toBe('secret-token')
+    const stored = [localStorage, sessionStorage]
+      .flatMap((storage) => Object.keys(storage).map((key) => storage.getItem(key) ?? ''))
+      .join('')
+    expect(stored).not.toContain('secret-token')
   })
 })

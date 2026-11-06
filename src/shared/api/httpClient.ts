@@ -43,6 +43,9 @@ function toApiError(error: unknown): ApiError {
 export const http: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 20_000,
+  // Lets the browser store/send the HttpOnly refresh cookie (needed when the API is on another
+  // origin, e.g. localhost:5173 → localhost:8000). It is scoped to /auth on the server side.
+  withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 })
 

@@ -35,7 +35,15 @@ function renderAt(path: string) {
 }
 
 describe('route guards', () => {
-  beforeEach(() => sessionStore.setState({ session: null, endReason: null }))
+  beforeEach(() => sessionStore.setState({ session: null, endReason: null, restored: true }))
+
+  it('waits for the session restore before deciding', async () => {
+    sessionStore.setState({ restored: false })
+    renderAt('/dashboard')
+    expect(await screen.findByText('Restaurando sesión…')).toBeInTheDocument()
+    sessionStore.getState().start({ token: 't', expiresAt: new Date(Date.now() + 60_000).toISOString(), student })
+    expect(await screen.findByText('Dashboard privado')).toBeInTheDocument()
+  })
 
   it('redirects to login without a token', async () => {
     const router = renderAt('/dashboard')

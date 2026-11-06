@@ -3,6 +3,7 @@ import { useCallback, useEffect } from 'react'
 import { useStore } from 'zustand'
 
 import { useNow } from '@/shared/lib/hooks'
+import { getActiveToken, revokeSession } from '../api/authApi'
 import { endSession, isSessionActive, msUntilExpiry, sessionStore } from '../model/sessionStore'
 
 export function useSession() {
@@ -11,6 +12,11 @@ export function useSession() {
 
 export function useSessionEndReason() {
   return useStore(sessionStore, (state) => state.endReason)
+}
+
+/** False while the app is still trying to restore the session after a reload. */
+export function useSessionRestored(): boolean {
+  return useStore(sessionStore, (state) => state.restored)
 }
 
 export function useIsAuthenticated(): boolean {
@@ -22,12 +28,17 @@ export function useIsAdmin(): boolean {
   return useSession()?.student.isAdmin ?? false
 }
 
-/** Forget the token (there is no logout endpoint) and clear cached data. */
+/**
+ * Log out: forget the token in memory and the cached data right away, and ask the backend to
+ * revoke the session and delete the HttpOnly refresh cookie (only the server can delete it).
+ */
 export function useLogout() {
   const queryClient = useQueryClient()
   return useCallback(() => {
+    const token = getActiveToken()
     endSession('logout')
     queryClient.clear()
+    void revokeSession(token)
   }, [queryClient])
 }
 

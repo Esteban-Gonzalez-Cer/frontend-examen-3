@@ -30,7 +30,7 @@ Aplicación web para consultar tu información académica del SII del ITC y simu
 | **React Router** | Rutas y *guards* (protegida, solo pública, admin) |
 | **TanStack Query** | Caché y estados de carga y error de las peticiones |
 | **axios** | Cliente HTTP con el token Bearer y el manejo de `401` |
-| **zustand** | Sesión persistida en `sessionStorage` |
+| **zustand** | Sesión en memoria (el token nunca va a `localStorage`/`sessionStorage`) |
 | **zod** | Validación del formulario de login |
 | **@xyflow/react** | Grafo interactivo de la retícula en el simulador |
 | **vitest** · **oxlint** | Pruebas y *lint*; el *lint* hace cumplir las fronteras entre capas |
@@ -72,9 +72,14 @@ src/
 
 ## Manejo de sesión
 
-- **Token:** el login guarda el token y su expiración en `sessionStorage`. Se borra al cerrar la pestaña.
+- **Access token:** vive **solo en memoria** (store de zustand). No está en `localStorage` ni en
+  `sessionStorage`, así que un script inyectado no puede leerlo del almacenamiento.
+- **Recargar la página:** la memoria se borra. Al arrancar, la app llama a `POST /auth/refresh`; el
+  navegador envía la cookie `HttpOnly` (que JavaScript no puede leer) y el backend devuelve el token.
+  Mientras tanto se muestra *"Restaurando sesión…"*. Si no hay cookie o la sesión expiró, va a `/login`.
 - **Nuevo login:** cada login reemplaza el token anterior y limpia toda la caché.
-- **Logout:** solo olvida el token. El backend no tiene endpoint de logout.
+- **Logout:** olvida el token y la caché al instante, y llama a `POST /auth/logout` para que el
+  servidor revoque la sesión y borre la cookie. Si esa llamada falla, la sesión local se cierra igual.
 - **Peticiones:** cada petición envía `Authorization: Bearer <token>`.
 - **Expiración (30 min):**
   - un temporizador cierra la sesión y redirige a `/login` con el mensaje *"Tu sesión expiró"*;
@@ -149,7 +154,7 @@ npm run lint && npm run typecheck && npm test && npm run build
 
 | Variable | Ejemplo | Descripción |
 |---|---|---|
-| `VITE_API_BASE_URL` | `http://localhost:8000/api/v1` | URL base de **nuestro** backend; nunca la del SII |
+| `VITE_API_BASE_URL` | local: `http://localhost:8000/api/v1` · Vercel: `/api/v1` | URL base de **nuestro** backend; nunca la del SII |
 
 La variable se incrusta en el código al compilar. Si la cambias en Vercel, hay que volver a desplegar.
 
@@ -160,12 +165,16 @@ La variable se incrusta en el código al compilar. Si la cambias en Vercel, hay 
 | Error de CORS en la consola | El backend no tiene este origen en `CORS_ORIGINS`. En local es `http://localhost:5173`. |
 | "El SII no está disponible" | El SII no respondió a tiempo o el backend está apagado. Revisa `/health` del backend. |
 | Las peticiones van a `localhost` en producción | Falta `VITE_API_BASE_URL` en Vercel (revisa el nombre exacto) o no se volvió a desplegar. |
+| Al recargar siempre pide login | La cookie no llega: en Vercel usa `VITE_API_BASE_URL=/api/v1` (proxy) en lugar de la URL de Render. |
 | El primer login en producción tarda unos 40 s | Render (plan gratuito) estaba dormido. Abre `/health` antes de usar la app. |
 
 ## Despliegue en Vercel
 
 - **Root Directory:** `frontend`. Vercel detecta el *preset* de Vite.
-- **Variable:** `VITE_API_BASE_URL=https://<tu-servicio>.onrender.com/api/v1`, sin puerto.
-- **Rutas:** `vercel.json` redirige todas las rutas a `index.html`. Así, recargar en `/kardex` u otra
+- **Variable:** `VITE_API_BASE_URL=/api/v1` (ruta relativa, mismo dominio).
+- **Proxy:** `vercel.json` reenvía `/api/*` a `https://backend-examen-3.onrender.com/api/*`. Así el
+  navegador ve frontend y API en el mismo sitio y acepta la cookie de refresh (Safari y Chrome bloquean
+  cookies de terceros). Si cambias el servicio de Render, actualiza esa URL.
+- **Rutas:** `vercel.json` redirige el resto de rutas a `index.html`. Así, recargar en `/kardex` u otra
   ruta no da 404.
 - **Auto-deploy:** cada *push* a la rama de producción vuelve a desplegar.
