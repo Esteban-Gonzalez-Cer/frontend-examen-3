@@ -1,4 +1,4 @@
-# Trayecta · Frontend (React + Vite + TypeScript)
+# Frontend (React + Vite + TypeScript)
 
 Aplicación web para consultar tu información académica del SII del ITC y simular tu trayectoria con el
 **What-If Simulator**.
