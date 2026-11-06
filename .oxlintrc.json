@@ -1,0 +1,130 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "react",
+    "typescript",
+    "oxc"
+  ],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": [
+      "warn",
+      {
+        "allowConstantExport": true
+      }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": [
+              "@/features/*/*",
+              "@/features/*/**"
+            ],
+            "message": "Feature boundary: import another feature only through its public API (@/features/<name>)."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/features/*/ui/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/features/*/*",
+                  "@/features/*/**",
+                  "../api",
+                  "../api/*",
+                  "../api/**",
+                  "axios",
+                  "@/shared/api",
+                  "@/shared/api/*",
+                  "@/shared/api/**"
+                ],
+                "message": "UI layer: no HTTP here. Fetch data through a hook in ../hooks."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/features/*/api/**",
+        "src/features/*/model/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "react",
+                  "react-dom",
+                  "../ui",
+                  "../ui/*",
+                  "../ui/**",
+                  "../hooks",
+                  "../hooks/*",
+                  "../hooks/**",
+                  "@/features/*/*",
+                  "@/features/*/**"
+                ],
+                "message": "api/model layers are plain TypeScript: no React, no UI, no hooks."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/shared/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/features",
+                  "@/features/*",
+                  "@/features/**",
+                  "@/app",
+                  "@/app/*",
+                  "@/app/**"
+                ],
+                "message": "shared must not depend on features or app."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+        "src/test/**"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "dist",
+    "node_modules"
+  ]
+}
