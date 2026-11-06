@@ -171,7 +171,7 @@ La variable se incrusta en el código al compilar. Si la cambias en Vercel, hay 
 ## Despliegue en Vercel
 
 - **Root Directory:** `frontend`. Vercel detecta el *preset* de Vite.
-- **Variable:** `VITE_API_BASE_URL=/api/v1` (ruta relativa, mismo dominio).
+- **Variable:** `VITE_API_BASE_URL=/api/v1`, o no la definas: un *build* de producción usa `/api/v1` por defecto. **No** pongas la URL de Render: el navegador trataría la cookie como de terceros y la descartaría.
 - **Proxy:** `vercel.json` reenvía `/api/*` a `https://backend-examen-3.onrender.com/api/*`. Así el
   navegador ve frontend y API en el mismo sitio y acepta la cookie de refresh (Safari y Chrome bloquean
   cookies de terceros). Si cambias el servicio de Render, actualiza esa URL.
